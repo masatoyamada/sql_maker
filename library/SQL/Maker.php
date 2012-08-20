@@ -90,6 +90,46 @@ class Maker {
         return array( $sql, $params );
     }
 
+    public function bulk_upsert ( $table, $rows ) {
+        if ( ! is_array( $rows ) || count( $rows ) < 1 ) {
+            throw new \Exception( 'Invalid argument' );
+        }
+
+        $num_column = count( $rows[0] );
+
+        foreach ( $rows as $row ) {
+            if ( 'hash' !== self::getType( $row ) ) {
+                throw new \Exception( 'Unknown type' );
+            }
+            if ( count( $row ) !== $num_column ) {
+                throw new \Exception( 'Invalid argument' );
+            }
+        }
+
+        $columns = array_keys( $rows[0] );
+        $sql_columns_part = sprintf( '( %s )', implode( ',', array_map( 'self::_quote', $columns ) ) );
+        $sql_values_one = sprintf( '( %s )', implode( ',', array_fill( 0, $num_column, '?' ) ) );
+        $sql_values_part = implode( ',', array_fill( 0, count( $rows ), $sql_values_one ) );
+        $sql = implode( ' ', array( 'INSERT INTO', self::_quote( $table ), $sql_columns_part, 'VALUES', $sql_values_part ) );
+
+        $on_duplicate = array();
+        foreach ( $columns as $column ) {
+            $quoted = self::_quote( $column );
+            $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+        }
+        $sql .= ' ON DUPLICATE KEY UPDATE ' . implode( ', ', $on_duplicate );
+
+        $params = array();
+        foreach ( $rows as $row ) {
+            foreach ( array_values( $row ) as $param ) { $params[] = $param; }
+        }
+
+        return array( $sql, $params );
+    }
+
+
+
+
     public function upsert ( $table, $data ) {
         if ( self::getType( $data ) !== 'hash' ) {
             throw new \Exception( 'Unknown type' );
