@@ -157,7 +157,13 @@ class Maker {
         $on_duplicate = array();
         foreach ( $opData as $key => $val ) {
             $quoted = self::_quote( $key );
-            $on_duplicate[] = sprintf( '%s = %s %s', $quoted, $quoted, $val );
+
+            if( $val == '-update' ) {
+                $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+            }
+            else {
+                $on_duplicate[] = sprintf( '%s = %s %s', $quoted, $quoted, $val );
+            }
         }
         $sql .= ' ON DUPLICATE KEY UPDATE ' . implode( ', ', $on_duplicate );
 

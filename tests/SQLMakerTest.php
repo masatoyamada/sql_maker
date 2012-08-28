@@ -164,6 +164,20 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals( array( 1, 1, 2 ), $params );
+
+        list( $sql, $params ) = $this->object->upsertWithOp(
+            'user',
+            array( 'id' => 1, 'count' => '1', 'pt' => '20' ),
+            array( 'count' => '+10', 'pt' => '-update' )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`count`,`pt` ) VALUES ( ?,?,? ) ON DUPLICATE KEY UPDATE `count` = `count` +10, `pt` = VALUES(`pt`)',
+            $sql
+        );
+
+        $this->assertEquals( array( 1, 1, 20 ), $params );
+
     }
 
     public function testUpdate()
