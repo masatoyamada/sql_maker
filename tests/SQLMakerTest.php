@@ -104,6 +104,22 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals( array( 1, 'sample1', 2, 'sample2', 3, 'sample3' ), $params );
 
+        list( $sql, $params ) = $this->object->bulk_upsert(
+            'user',
+            array(   array( 'id' => 1, 'pt' => '10' )
+                   , array( 'id' => 2, 'pt' => '10' )
+                   , array( 'id' => 3, 'pt' => '10' )
+            ),
+            array( 'pt' => '+10' )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`pt` ) VALUES ( ?,? ),( ?,? ),( ?,? ) ON DUPLICATE KEY UPDATE `pt` = `pt` +10',
+            $sql
+        );
+
+        $this->assertEquals( array( 1, '10', 2, '10', 3, '10' ), $params );
+
         try {
             $this->object->bulk_upsert( 'table1', 'foo' );
             $this->fail();

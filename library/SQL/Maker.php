@@ -90,7 +90,7 @@ class Maker {
         return array( $sql, $params );
     }
 
-    public function bulk_upsert ( $table, $rows ) {
+    public function bulk_upsert ( $table, $rows, $opData = false ) {
         if ( ! is_array( $rows ) || count( $rows ) < 1 ) {
             throw new \Exception( 'Invalid argument' );
         }
@@ -113,9 +113,23 @@ class Maker {
         $sql = implode( ' ', array( 'INSERT INTO', self::_quote( $table ), $sql_columns_part, 'VALUES', $sql_values_part ) );
 
         $on_duplicate = array();
-        foreach ( $columns as $column ) {
-            $quoted = self::_quote( $column );
-            $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+        if( $opData ){
+            foreach( $opData as $key => $val ) {
+                $quoted = self::_quote( $key );
+
+                if( $val == '-update' ) {
+                    $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+                }
+                else {
+                    $on_duplicate[] = sprintf( '%s = %s %s', $quoted, $quoted, $val );
+                }
+            }
+        }
+        else {
+            foreach ( $columns as $column ) {
+                $quoted = self::_quote( $column );
+                $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+            }
         }
         $sql .= ' ON DUPLICATE KEY UPDATE ' . implode( ', ', $on_duplicate );
 
@@ -126,9 +140,6 @@ class Maker {
 
         return array( $sql, $params );
     }
-
-
-
 
     public function upsert ( $table, $data ) {
         if ( self::getType( $data ) !== 'hash' ) {
