@@ -209,6 +209,18 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals( array( 'dummy', 'dummy@sample.com' ), $params1 );
+
+        list( $sql2, $param2 ) = $this->object->update(
+            'user',
+            array( 'name' => 'dummy', 'age' => array( '+' => 3 ) )
+        );
+
+        $this->assertEquals(
+            'UPDATE `user` SET `name` = ?,`age` = `age` + ?',
+            $sql2
+        );
+        $this->assertEquals( array( 'dummy', 3 ), $param2 );
+
     }
 
     public function testSelect()

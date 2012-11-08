@@ -195,8 +195,17 @@ class Maker {
         $params = array();
         foreach ( $data as $column => $value ) {
             $column = self::_quote( $column );
-            array_push( $set, sprintf( '%s = ?', $column ) );
-            array_push( $params, $value );
+            if( self::getType( $value ) == 'hash' ) {
+                foreach( $value as $op => $num ) {
+                    array_push( $set, sprintf( '%s = %s '.$op.' ?', $column, $column ) );
+                    array_push( $params, $num );
+                    break;
+                }
+            }
+            else {
+                array_push( $set, sprintf( '%s = ?', $column ) );
+                array_push( $params, $value );
+            }
         }
 
         $sql = implode( ',', $set );
