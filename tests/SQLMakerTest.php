@@ -104,6 +104,32 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals( array( 1, 'sample1', 2, 'sample2', 3, 'sample3' ), $params );
 
+
+        list( $sql, $params ) = $this->object->bulk_upsert(
+            'user',
+            array(   array( 'id' => 1, 'name' => 'sample1', 'age' => 20, 'pt' => 10, 'create_at' => '2010-01-01 00:00:00' )
+                   , array( 'id' => 2, 'name' => 'sample2', 'age' => 21, 'pt' => 20, 'create_at' => '2010-01-01 00:00:00' )
+                   , array( 'id' => 3, 'name' => 'sample3', 'age' => 22, 'pt' => 30, 'create_at' => '2010-01-01 00:00:00' )
+            ),
+            array(
+                'age' => '-update',
+                'pt' => '+ VALUES( `pt` )',
+                'create_at' => '-no-update'
+            )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`name`,`age`,`pt`,`create_at` ) VALUES ( ?,?,?,?,? ),( ?,?,?,?,? ),( ?,?,?,?,? ) ON DUPLICATE KEY UPDATE `age` = VALUES(`age`), `pt` = `pt` + VALUES( `pt` )',
+            $sql
+        );
+
+        $this->assertEquals(
+            array( 1, 'sample1', 20, 10, '2010-01-01 00:00:00',
+                   2, 'sample2', 21, 20, '2010-01-01 00:00:00',
+                   3, 'sample3', 22, 30, '2010-01-01 00:00:00' ),
+            $params );
+
+
         list( $sql, $params ) = $this->object->bulk_upsert(
             'user',
             array(   array( 'id' => 1, 'pt' => '10' )
@@ -189,6 +215,19 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(
             'INSERT INTO `user` ( `id`,`count`,`pt` ) VALUES ( ?,?,? ) ON DUPLICATE KEY UPDATE `count` = `count` +10, `pt` = VALUES(`pt`)',
+            $sql
+        );
+
+        $this->assertEquals( array( 1, 1, 20 ), $params );
+
+        list( $sql, $params ) = $this->object->upsertWithOp(
+            'user',
+            array( 'id' => 1, 'count' => '1', 'pt' => '20' ),
+            array( 'count' => '+10', 'pt' => '-no-update' )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`count`,`pt` ) VALUES ( ?,?,? ) ON DUPLICATE KEY UPDATE `count` = `count` +10',
             $sql
         );
 
