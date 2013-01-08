@@ -120,9 +120,6 @@ class Maker {
                 if( $val == '-update' ) {
                     $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
                 }
-                else if( $val == '-no-update' ) {
-                    //update時に更新しない
-                }
                 else {
                     $on_duplicate[] = sprintf( '%s = %s %s', $quoted, $quoted, $val );
                 }
@@ -174,9 +171,6 @@ class Maker {
 
             if( $val == '-update' ) {
                 $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
-            }
-            else if( $val == '-no-update' ) {
-                //update時に更新しない
             }
             else {
                 $on_duplicate[] = sprintf( '%s = %s %s', $quoted, $quoted, $val );
