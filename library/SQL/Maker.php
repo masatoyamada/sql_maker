@@ -90,7 +90,7 @@ class Maker {
         return array( $sql, $params );
     }
 
-    public function bulk_upsert ( $table, $rows, $opData = false ) {
+    public function bulk_upsert ( $table, $rows, $opData = false, $ignoreCols = array() ) {
         if ( ! is_array( $rows ) || count( $rows ) < 1 ) {
             throw new \Exception( 'Invalid argument' );
         }
@@ -126,9 +126,12 @@ class Maker {
             }
         }
         else {
+            $ignoreCols = array_flip( $ignoreCols );
             foreach ( $columns as $column ) {
-                $quoted = self::_quote( $column );
-                $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+                if( ! isset( $ignoreCols[$column] ) ) {
+                    $quoted = self::_quote( $column );
+                    $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+                }
             }
         }
         $sql .= ' ON DUPLICATE KEY UPDATE ' . implode( ', ', $on_duplicate );
@@ -141,17 +144,20 @@ class Maker {
         return array( $sql, $params );
     }
 
-    public function upsert ( $table, $data ) {
+    public function upsert ( $table, $data, $ignoreCols = array() ) {
         if ( self::getType( $data ) !== 'hash' ) {
             throw new \Exception( 'Unknown type' );
         }
 
         list( $sql, $params ) = $this->insert( $table, $data );
+        $ignoreCols = array_flip( $ignoreCols );
 
         $on_duplicate = array();
         foreach ( array_keys( $data ) as $column ) {
-            $quoted = self::_quote( $column );
-            $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+            if( ! isset( $ignoreCols[$column] ) ) {
+                $quoted = self::_quote( $column );
+                $on_duplicate[] = sprintf( '%s = VALUES(%s)', $quoted, $quoted );
+            }
         }
         $sql .= ' ON DUPLICATE KEY UPDATE ' . implode( ', ', $on_duplicate );
 

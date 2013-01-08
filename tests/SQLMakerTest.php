@@ -106,6 +106,25 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
 
         list( $sql, $params ) = $this->object->bulk_upsert(
             'user',
+            array(   array( 'id' => 1, 'name' => 'sample1', 'age' => 20 )
+                   , array( 'id' => 2, 'name' => 'sample2', 'age' => 21 )
+                   , array( 'id' => 3, 'name' => 'sample3', 'age' => 22 )
+            ),
+            false,
+            array(
+                'name', 'age'
+            )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`name`,`age` ) VALUES ( ?,?,? ),( ?,?,? ),( ?,?,? ) ON DUPLICATE KEY UPDATE `id` = VALUES(`id`)',
+            $sql
+        );
+
+        $this->assertEquals( array( 1, 'sample1', 20, 2, 'sample2', 21, 3, 'sample3', 22 ), $params );
+
+        list( $sql, $params ) = $this->object->bulk_upsert(
+            'user',
             array(   array( 'id' => 1, 'pt' => '10' )
                    , array( 'id' => 2, 'pt' => '10' )
                    , array( 'id' => 3, 'pt' => '10' )
@@ -119,6 +138,23 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals( array( 1, '10', 2, '10', 3, '10' ), $params );
+
+
+        list( $sql, $params ) = $this->object->bulk_upsert(
+            'user',
+            array(   array( 'id' => 1, 'pt' => '10', 'age' => 20 )
+                   , array( 'id' => 2, 'pt' => '10', 'age' => 21 )
+                   , array( 'id' => 3, 'pt' => '10', 'age' => 22 )
+            ),
+            array( 'pt' => '+10', 'age' => '-update' )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`pt`,`age` ) VALUES ( ?,?,? ),( ?,?,? ),( ?,?,? ) ON DUPLICATE KEY UPDATE `pt` = `pt` +10, `age` = VALUES(`age`)',
+            $sql
+        );
+
+        $this->assertEquals( array( 1, '10', 20, 2, '10', 21, 3, '10', 22 ), $params );
 
         try {
             $this->object->bulk_upsert( 'table1', 'foo' );
@@ -164,6 +200,19 @@ class SQLMakerTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->assertEquals( array( 1, 'sample' ), $params );
+
+        list( $sql, $params ) = $this->object->upsert(
+            'user',
+            array( 'id' => 1, 'name' => 'sample', 'age' => 21 ),
+            array( 'name', 'age' )
+        );
+
+        $this->assertEquals(
+            'INSERT INTO `user` ( `id`,`name`,`age` ) VALUES ( ?,?,? ) ON DUPLICATE KEY UPDATE `id` = VALUES(`id`)',
+            $sql
+        );
+
+        $this->assertEquals( array( 1, 'sample', 21 ), $params );
     }
 
     public function testUpsertWithOp()
